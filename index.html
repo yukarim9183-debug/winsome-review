@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Winsome 口コミQR</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root{--bg:#f6f4f0;--card:#fff;--ink:#1c1c1c;--sub:#6b6760;--line:#e4e0d8;--gold:#b08d57}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;line-height:1.7}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 16px 48px}
+  h1{font-family:"Cormorant Garamond",serif;letter-spacing:.12em;font-size:34px;margin:0;text-align:center}
+  .sub{text-align:center;color:var(--sub);font-size:13px;margin:4px 0 24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 20px;text-align:center;break-inside:avoid}
+  .card h2{margin:0 0 4px;font-size:18px}
+  .card .brand{font-family:"Cormorant Garamond",serif;font-size:24px;letter-spacing:.12em}
+  .card p{margin:6px 0;font-size:13px;color:var(--sub)}
+  .qr{display:inline-block;padding:12px;background:#fff;margin:12px 0}
+  .qr img,.qr canvas{display:block;width:200px;height:200px}
+  a.open{display:inline-block;margin-top:8px;font-size:13px;color:var(--ink);word-break:break-all}
+  .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;background:#fdecea;color:#b3261e;margin:2px}
+  .tag.ok{background:#e8f5e9;color:#2e7d32}
+  .bar{text-align:center;margin-bottom:20px}
+  .bar button{border:0;background:var(--ink);color:#fff;border-radius:10px;padding:12px 24px;font-size:15px;font-family:inherit;cursor:pointer}
+  @media print{ .bar,.status,a.open{display:none} body{background:#fff} .card{border:1px solid #ccc} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Winsome</h1>
+  <p class="sub">口コミ用QRコード（店頭POP用）｜スタッフ向けページ</p>
+  <div class="bar"><button onclick="print()">印刷する</button></div>
+  <div class="grid" id="grid"></div>
+</div>
+<script src="stores.js"></script>
+<script>
+  const C = window.WINSOME_CONFIG;
+  const base = location.href.replace(/[^/]*$/, "");
+  const grid = document.getElementById("grid");
+  C.STORES.forEach(s => {
+    const url = base + "review.html?store=" + encodeURIComponent(s.id);
+    const card = document.createElement("div");
+    card.className = "card";
+    const tag = (ok, label) => `<span class="tag ${ok?"ok":""}">${label}${ok?" 設定済":" 未設定"}</span>`;
+    card.innerHTML = `
+      <div class="brand">${C.brand}</div>
+      <h2>${s.name}</h2>
+      <p>ご来店ありがとうございました。<br>口コミのご協力をお願いします！</p>
+      <div class="qr"></div>
+      <p>スマホのカメラで読み取ってください</p>
+      <div class="status">${tag(!!s.googleUrl,"Google")}${tag(!!s.hotpepperUrl,"ホットペッパー")}</div>
+      <a class="open" href="${url}" target="_blank">${url}</a>`;
+    grid.appendChild(card);
+    new QRCode(card.querySelector(".qr"), { text:url, width:400, height:400, correctLevel:QRCode.CorrectLevel.M });
+    const dl = document.createElement("a");
+    dl.className = "open"; dl.textContent = "QR画像を保存";
+    dl.download = `winsome_${s.id}_qr.png`;
+    dl.onclick = () => { dl.href = card.querySelector(".qr canvas").toDataURL("image/png"); };
+    dl.href = "#";
+    card.appendChild(document.createElement("br"));
+    card.appendChild(dl);
+  });
+</script>
+</body>
+</html>

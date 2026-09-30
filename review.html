@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Winsome 口コミ</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f4f0; --card:#ffffff; --ink:#1c1c1c; --sub:#6b6760; --line:#e4e0d8;
+    --accent:#1c1c1c; --gold:#b08d57; --chip:#f1eee8; --chip-on:#1c1c1c; --chip-on-ink:#fff;
+    --hp:#e8386e; --gg:#1a73e8; --ok:#2e7d32;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px 48px}
+  header{text-align:center;padding:32px 0 20px}
+  .logo{font-family:"Cormorant Garamond",serif;font-size:38px;letter-spacing:.12em;margin:0;line-height:1}
+  .logo-sub{font-size:12px;color:var(--gold);letter-spacing:.2em;margin-top:6px}
+  .store{display:inline-block;margin-top:12px;font-size:13px;border:1px solid var(--ink);padding:2px 14px;border-radius:99px}
+  .lead{text-align:center;font-size:14px;color:var(--sub);margin:4px 0 20px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 18px;margin-bottom:14px}
+  .q{font-weight:700;font-size:15px;margin:0 0 4px;display:flex;gap:8px;align-items:baseline}
+  .q .n{font-family:"Cormorant Garamond",serif;color:var(--gold);font-size:20px}
+  .hint{font-size:12px;color:var(--sub);margin:0 0 12px}
+  .opt{font-size:11px;color:var(--sub);font-weight:400}
+  .stars{display:flex;justify-content:center;gap:6px}
+  .stars button{background:none;border:0;font-size:40px;line-height:1;color:#d8d3ca;cursor:pointer;padding:4px;transition:transform .1s}
+  .stars button.on{color:var(--gold)}
+  .stars button:active{transform:scale(.9)}
+  .star-label{text-align:center;font-size:13px;color:var(--sub);min-height:20px;margin-top:4px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:99px;padding:8px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+  .chip.on{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+  input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;font-family:inherit;background:#fff;color:var(--ink)}
+  textarea{min-height:96px;resize:vertical}
+  .btn{display:block;width:100%;border:0;border-radius:12px;padding:16px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;text-align:center;text-decoration:none}
+  .btn-main{background:var(--accent);color:#fff}
+  .btn-main:disabled{opacity:.35;cursor:not-allowed}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:500;font-size:14px;padding:12px}
+  .btn-hp{background:var(--hp);color:#fff}
+  .btn-gg{background:var(--gg);color:#fff}
+  .btn[aria-disabled=true]{background:#ccc;pointer-events:none}
+  .row{display:flex;gap:8px}
+  .row .btn{flex:1}
+  .stack>*+*{margin-top:10px}
+  #result{display:none}
+  #reviewText{min-height:220px;font-size:15px;line-height:1.8}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+  .tab{border:1px solid var(--line);border-bottom:0;background:var(--chip);color:var(--sub);border-radius:10px 10px 0 0;padding:8px 2px;font-family:inherit;cursor:pointer;line-height:1.3;min-height:52px}
+  .tab .t1{display:block;font-size:11px}
+  .tab .t2{display:block;font-size:13px;font-weight:700}
+  .tab.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tab.on .t1{color:var(--gold)}
+  #reviewText.tab-panel{border:2px solid var(--ink);border-radius:0 0 12px 12px;overflow:hidden;min-height:160px;resize:none}
+  .count{text-align:right;font-size:12px;color:var(--sub);margin-top:4px}
+  .note{font-size:12px;color:var(--sub);background:var(--chip);border-radius:10px;padding:10px 12px;margin:0}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .steps{counter-reset:s;padding:0;margin:0 0 14px;list-style:none;font-size:13px}
+  .steps li{counter-increment:s;padding-left:28px;position:relative;margin-bottom:6px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:#fff;font-size:11px;display:grid;place-items:center}
+  .err{text-align:center;padding:60px 0}
+  footer{text-align:center;font-size:11px;color:var(--sub);margin-top:24px}
+  [hidden]{display:none!important}
+  /* スマホ最適化 */
+  html{-webkit-text-size-adjust:100%}
+  button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .chip{min-height:44px}
+  .stars button{min-width:52px;min-height:52px}
+  .wrap{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+  .sticky{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(to top,var(--bg) 70%,transparent);z-index:5}
+  .sticky .btn{max-width:488px;margin:0 auto;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  .btn-hp,.btn-gg{padding:18px;font-size:17px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="logo" id="brand">Winsome</p>
+    <div class="logo-sub" id="brandSub"></div>
+    <div class="store" id="storeName"></div>
+  </header>
+
+  <div id="app">
+    <p class="lead">本日はご来店ありがとうございました。<br>かんたんな質問に答えるだけで、口コミの文章が作れます。<br>（約1分）</p>
+
+    <section class="card">
+      <p class="q"><span class="n">01</span>本日の満足度は？</p>
+      <div class="stars" id="stars"></div>
+      <div class="star-label" id="starLabel"></div>
+    </section>
+
+    <section class="card">
+      <p class="q"><span class="n">02</span>受けたメニュー <span class="opt">（複数OK）</span></p>
+      <div class="chips" id="menus"></div>
+    </section>
+
+    <section class="card">
+      <p class="q"><span class="n">03</span>良かったところ <span class="opt">（複数OK）</span></p>
+      <p class="hint">当てはまるものをタップしてください</p>
+      <div class="chips" id="goods"></div>
+    </section>
+
+    <section class="card" id="concernCard" hidden>
+      <p class="q"><span class="n">03+</span>気になったところ <span class="opt">（任意）</span></p>
+      <p class="hint">率直なご意見がお店の改善につながります</p>
+      <div class="chips" id="concerns"></div>
+    </section>
+
+    <section class="card">
+      <p class="q"><span class="n">04</span>ご来店は何回目ですか？</p>
+      <div class="chips" id="visit"></div>
+    </section>
+
+    <section class="card">
+      <p class="q"><span class="n">05</span>担当スタッフ <span class="opt">（任意）</span></p>
+      <div class="chips" id="staffChips" style="margin-bottom:10px"></div>
+      <input type="text" id="staff" placeholder="例：田中さん" autocomplete="off">
+    </section>
+
+    <section class="card">
+      <p class="q"><span class="n">06</span>ひとこと <span class="opt">（任意）</span></p>
+      <p class="hint">ご自身の言葉を入れると、より伝わる口コミになります</p>
+      <textarea id="free" placeholder="例：眉を整えただけで職場で褒められました"></textarea>
+    </section>
+
+    <div class="sticky"><button class="btn btn-main" id="genBtn" disabled>口コミ文章を作成する</button></div>
+  </div>
+
+  <div id="result">
+    <section class="card" id="editCard">
+      <p class="q">口コミの候補を選んでください</p>
+      <p class="hint">タブで4つの候補を切り替えられます。内容はご自由に書き換えてください。</p>
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <textarea id="reviewText" class="tab-panel"></textarea>
+      <div class="count"><span id="charCount">0</span>文字</div>
+      <button class="btn btn-ghost" id="copyBtn" style="margin-top:10px">コピー</button>
+    </section>
+
+    <section class="card" id="postCard">
+      <p class="q">投稿先を選んでください</p>
+      <ol class="steps">
+        <li>ボタンを押すと文章が自動でコピーされます</li>
+        <li>開いた画面で★を選び、入力欄を長押しして「ペースト」</li>
+        <li>投稿ボタンを押して完了です</li>
+      </ol>
+      <div class="stack">
+        <a class="btn btn-gg" id="ggBtn" target="_blank" rel="noopener">Googleに投稿する</a>
+        <a class="btn btn-hp" id="hpBtn" target="_blank" rel="noopener">ホットペッパーに投稿する</a>
+        <p class="note">※ ホットペッパーは、ログイン後に表示される<b>予約履歴</b>から「Winsome」の<b>「口コミを投稿する」</b>を押してください。ホットペッパー経由でご予約いただいたお客様のみ投稿できます。</p>
+      </div>
+    </section>
+
+    <button class="btn btn-ghost" id="backBtn">← 回答を修正する</button>
+  </div>
+
+  <footer><span id="footBrand"></span></footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="stores.js"></script>
+<script>
+(function(){
+  const C = window.WINSOME_CONFIG;
+  const $ = s => document.querySelector(s);
+  const params = new URLSearchParams(location.search);
+  const store = C.STORES.find(s => s.id === params.get("store"));
+
+  $("#brand").textContent = C.brand;
+  $("#brandSub").textContent = C.brandSub;
+  $("#footBrand").textContent = "© " + C.brand;
+
+  if(!store){
+    $("#app").innerHTML = '<div class="err">店舗が見つかりませんでした。<br>店頭のQRコードをもう一度読み取ってください。</div>';
+    return;
+  }
+  $("#storeName").textContent = store.name;
+  document.title = C.brand + " " + store.name + " 口コミ";
+
+  const state = { rating:0, menus:new Set(), goods:new Set(), concerns:new Set(), visit:"" };
+
+  // ---------- 星 ----------
+  const STAR_LABELS = ["","不満","やや不満","普通","満足","大満足！"];
+  const starsEl = $("#stars");
+  for(let i=1;i<=5;i++){
+    const b = document.createElement("button");
+    b.type="button"; b.textContent="★"; b.setAttribute("aria-label", i+"つ星");
+    b.onclick = () => { state.rating=i; renderStars(); validate(); };
+    starsEl.appendChild(b);
+  }
+  function renderStars(){
+    [...starsEl.children].forEach((b,i)=>b.classList.toggle("on", i < state.rating));
+    $("#starLabel").textContent = STAR_LABELS[state.rating];
+    $("#concernCard").hidden = !(state.rating && state.rating <= 3);
+  }
+
+  // ---------- チップ ----------
+  function chips(el, items, set, single){
+    items.forEach(it => {
+      const label = typeof it === "string" ? it : it.label;
+      const b = document.createElement("button");
+      b.type="button"; b.className="chip"; b.textContent=label;
+      b.onclick = () => {
+        if(single){
+          el.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));
+          state[single] = label; b.classList.add("on");
+        }else{
+          set.has(label) ? set.delete(label) : set.add(label);
+          b.classList.toggle("on");
+        }
+        validate();
+      };
+      el.appendChild(b);
+    });
+  }
+  chips($("#menus"), C.MENUS, state.menus);
+  chips($("#goods"), C.GOOD_POINTS, state.goods);
+  chips($("#concerns"), C.CONCERNS, state.concerns);
+  chips($("#visit"), ["初めて","2回目","3回目以上"], null, "visit");
+  if(store.staff && store.staff.length){
+    store.staff.forEach(n=>{
+      const b=document.createElement("button");
+      b.type="button"; b.className="chip"; b.textContent=n;
+      b.onclick=()=>{ $("#staff").value = n + "さん"; };
+      $("#staffChips").appendChild(b);
+    });
+  }else{ $("#staffChips").hidden = true; }
+
+  function validate(){ $("#genBtn").disabled = !(state.rating && (state.goods.size || state.menus.size || state.concerns.size)); }
+
+  // ---------- 文章生成 ----------
+  const pick = a => a[Math.floor(Math.random()*a.length)];
+  const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+  const phraseOf = (list, labels) => list.filter(x=>labels.has(x.label)).map(x=>x.phrase);
+
+  // 普通体の句（〜た / 〜い / 〜る）を丁寧体に
+  const RULES = [[/だった$/,"でした"],[/かった$/,"かったです"],[/た$/,"ました"],[/い$/,"いです"],[/る$/,"ます"]];
+  const polite = p => { const r = RULES.find(([re])=>re.test(p)); return r ? p.replace(r[0], r[1]) : p; };
+  function joinPair(ps){
+    const [a,b] = ps.map(polite);
+    if(!b) return a + "。";
+    return pick([`${a}し、${b}。`, `${a}。${b}。`]);
+  }
+
+  // mode: full=しっかり / short=シンプル / impression=感想から / recommend=おすすめ
+  function generate(mode){
+    const r = state.rating;
+    const menus = [...state.menus];
+    const menuTxt = menus.length ? menus.map(m=>m.replace(/（.*?）/,"")).join("と") : "眉毛の施術";
+    let goods = shuffle(phraseOf(C.GOOD_POINTS, state.goods));
+    if(mode==="short") goods = goods.slice(0,2);
+    const concerns = phraseOf(C.CONCERNS, state.concerns);
+    const staff = $("#staff").value.trim();
+    const free = $("#free").value.trim();
+    const v = state.visit;
+    const out = [];
+
+    // 導入
+    const intro = {
+      "初めて": [
+        `初めて${store.name.replace("店","")}の${C.brand}さんに伺い、${menuTxt}をお願いしました。`,
+        `眉毛サロンは初めてでしたが、${C.brand}${store.name}で${menuTxt}を受けてきました。`,
+        `前から気になっていた${C.brand}${store.name}で、初めて${menuTxt}をしてもらいました。`,
+      ],
+      "2回目": [
+        `前回が良かったので、2回目の来店です。今回は${menuTxt}をお願いしました。`,
+        `${C.brand}${store.name}に2回目の来店で、${menuTxt}をしてもらいました。`,
+      ],
+      "3回目以上": [
+        `${C.brand}${store.name}にはいつもお世話になっています。今回も${menuTxt}をお願いしました。`,
+        `リピートで通っています。今回は${menuTxt}をしてもらいました。`,
+      ],
+    }[v] || [`${C.brand}${store.name}で${menuTxt}をしてもらいました。`];
+    const endPunct = s => /[。！!？?]$/.test(s) ? s : s + "。";
+    if(mode==="impression"){
+      out.push(pick(r>=4 ? ["眉を整えてもらって本当に良かったです！","想像以上の仕上がりで大満足です！","思い切って行ってみて正解でした。"]
+                    : ["率直な感想を書かせていただきます。"]));
+      if(free) out.push(endPunct(free));
+    }
+    out.push(pick(intro));
+
+    // 良かった点
+    if(goods.length){
+      const chunks = [];
+      for(let i=0;i<goods.length;i+=2) chunks.push(goods.slice(i,i+2));
+      chunks.forEach((c,i)=>{
+        let s = joinPair(c);
+        if(i>0) s = pick(["また、","それに、","ほかにも、"]) + s;
+        out.push(s);
+      });
+    }
+
+    // 担当
+    if(staff && mode!=="short"){
+      const st = /さん$/.test(staff) ? staff : staff + "さん";
+      out.push(pick([
+        `担当してくださった${st}、ありがとうございました。`,
+        `担当の${st}にはとてもお世話になりました。`,
+      ]));
+    }
+
+    // ひとこと
+    if(free && mode!=="impression") out.push(endPunct(free));
+
+    // 気になった点（★3以下）
+    if(concerns.length){
+      out.push("一方で、" + concerns.join("ことや、") + "点は気になりました。");
+    }
+
+    // 締め
+    const close = r>=5 ? [
+      "大満足です。また次もお願いしたいと思います！",
+      "本当に行って良かったです。眉で悩んでいる男性にぜひおすすめしたいです。",
+      "仕上がりにとても満足しています。定期的に通いたいと思います。",
+    ] : r===4 ? [
+      "全体的に満足しています。また利用したいと思います。",
+      "満足度は高いです。次回もお願いしようと思います。",
+    ] : r===3 ? [
+      "良いところもあったので、今後に期待しています。",
+      "全体としては普通でした。改善されればまた利用したいです。",
+    ] : [
+      "今回は正直あまり満足できませんでした。改善を期待しています。",
+      "今回は残念でしたが、今後の改善に期待しています。",
+    ];
+    const recommend = r>=4 ? [
+      "眉毛で印象を変えたい男性や、自分で整えるのが苦手な方にはぜひおすすめしたいです！",
+      "眉毛サロンが初めての男性でも安心して行けるお店だと思います。おすすめです！",
+    ] : close;
+    const shortClose = r>=4 ? ["また行きます！","おすすめです！","大満足でした！"] : close;
+    const impClose = r>=4 ? ["また次もお願いしたいと思います！","これからも定期的に通いたいと思います。"] : close;
+    out.push(pick(mode==="recommend" ? recommend : mode==="short" ? shortClose : mode==="impression" ? impClose : close));
+    return out.join("");
+  }
+
+  const MODES = [
+    { id:"full", label:"しっかり" },
+    { id:"short", label:"シンプル" },
+    { id:"impression", label:"感想から" },
+    { id:"recommend", label:"おすすめ" },
+  ];
+  // 候補ごとの文章（タブ切替しても各タブの編集内容は保持）
+  let texts = [], current = 0;
+  function renderCandidates(){
+    const box = $("#tabs"); box.innerHTML = "";
+    const seen = new Set();
+    texts = MODES.map(m => {
+      let t, tries = 0;
+      do { t = generate(m.id); } while(seen.has(t) && ++tries < 20);
+      seen.add(t); return t;
+    });
+    MODES.forEach((m,i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tab"; b.setAttribute("role","tab");
+      b.innerHTML = `<span class="t1">候補${i+1}</span><span class="t2">${m.label}</span>`;
+      b.onclick = () => selectTab(i);
+      box.appendChild(b);
+    });
+    selectTab(0);
+  }
+  function selectTab(i){
+    current = i;
+    [...$("#tabs").children].forEach((b,j)=>{ b.classList.toggle("on", j===i); b.setAttribute("aria-selected", j===i); });
+    ta.value = texts[i]; updateCount();
+  }
+
+  // ---------- 画面切替 ----------
+  const ta = $("#reviewText");
+  // 文章の長さに合わせて入力欄を下に伸ばす
+  const autosize = () => { if(!ta.style) return; ta.style.height = "auto"; ta.style.height = (ta.scrollHeight + 4) + "px"; };
+  const updateCount = () => { $("#charCount").textContent = ta.value.length; autosize(); };
+  ta.addEventListener("input", () => { texts[current] = ta.value; updateCount(); });
+
+  $("#genBtn").onclick = () => {
+    $("#app").style.display="none"; $("#result").style.display="block";
+    renderCandidates();
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+  $("#backBtn").onclick = () => {
+    $("#result").style.display="none"; $("#app").style.display="block";
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+
+  // ---------- コピー & 投稿 ----------
+  function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2200); }
+  async function copy(){
+    try{ await navigator.clipboard.writeText(ta.value); }
+    catch(e){ ta.select(); document.execCommand("copy"); }
+    toast("文章をコピーしました");
+  }
+  $("#copyBtn").onclick = copy;
+
+  function setupLink(el, url){
+    if(url){ el.href = url; el.onclick = () => { copy(); }; }
+    else{ el.setAttribute("aria-disabled","true"); el.textContent += "（準備中）"; }
+  }
+  setupLink($("#ggBtn"), store.googleUrl);
+  setupLink($("#hpBtn"), store.hotpepperUrl);
+})();
+</script>
+</body>
+</html>
