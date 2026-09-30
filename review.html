@@ -66,6 +66,8 @@
   .err{text-align:center;padding:60px 0}
   footer{text-align:center;font-size:11px;color:var(--sub);margin-top:24px}
   [hidden]{display:none!important}
+  .sub-q{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+  .sub-q:first-of-type{margin-top:0}
   /* スマホ最適化 */
   html{-webkit-text-size-adjust:100%}
   button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -117,15 +119,23 @@
     </section>
 
     <section class="card">
-      <p class="q"><span class="n">05</span>担当スタッフ <span class="opt">（任意）</span></p>
+      <p class="q"><span class="n">05</span>来店のきっかけ <span class="opt">（任意）</span></p>
+      <div class="chips" id="trigger"></div>
+    </section>
+
+    <section class="card">
+      <p class="q"><span class="n">06</span>担当スタッフ <span class="opt">（任意）</span></p>
       <div class="chips" id="staffChips" style="margin-bottom:10px"></div>
       <input type="text" id="staff" placeholder="例：田中さん" autocomplete="off">
     </section>
 
     <section class="card">
-      <p class="q"><span class="n">06</span>ひとこと <span class="opt">（任意）</span></p>
-      <p class="hint">ご自身の言葉を入れると、より伝わる口コミになります</p>
-      <textarea id="free" placeholder="例：眉を整えただけで職場で褒められました"></textarea>
+      <p class="q"><span class="n">07</span>あなたの言葉で教えてください <span class="opt">（任意・ひとことでOK）</span></p>
+      <p class="hint">ご自身の言葉が入ると、あなただけの口コミになります</p>
+      <label class="sub-q" for="free1">いちばん良かったのは？</label>
+      <input type="text" id="free1" autocomplete="off">
+      <label class="sub-q" for="free2">終わったあとの気持ちや、周りの反応は？</label>
+      <input type="text" id="free2" autocomplete="off">
     </section>
 
     <div class="sticky"><button class="btn btn-main" id="genBtn" disabled>口コミ文章を作成する</button></div>
@@ -181,7 +191,7 @@
   $("#storeName").textContent = store.name;
   document.title = C.brand + " " + store.name + " 口コミ";
 
-  const state = { rating:0, menus:new Set(), goods:new Set(), concerns:new Set(), visit:"" };
+  const state = { rating:0, menus:new Set(), goods:new Set(), concerns:new Set(), visit:"", trigger:"" };
 
   // ---------- 星 ----------
   const STAR_LABELS = ["","不満","やや不満","普通","満足","大満足！"];
@@ -221,6 +231,12 @@
   chips($("#goods"), C.GOOD_POINTS, state.goods);
   chips($("#concerns"), C.CONCERNS, state.concerns);
   chips($("#visit"), ["初めて","2回目","3回目以上"], null, "visit");
+  chips($("#trigger"), C.TRIGGERS, null, "trigger");
+  // 記入例は毎回ランダムに（例文がそのまま似た文章になるのを防ぐ）
+  const EX1 = ["例：眉の形を一緒に考えてくれたこと","例：自分に似合う眉がわかったこと","例：思ったより痛くなかったこと","例：話しやすいスタッフさん"];
+  const EX2 = ["例：職場で「なんか変わった？」と言われた","例：鏡を見るのが楽しくなった","例：顔がすっきりして気分が上がった","例：彼女に褒められた"];
+  $("#free1").placeholder = EX1[Math.floor(Math.random()*EX1.length)];
+  $("#free2").placeholder = EX2[Math.floor(Math.random()*EX2.length)];
   if(store.staff && store.staff.length){
     store.staff.forEach(n=>{
       const b=document.createElement("button");
@@ -233,107 +249,123 @@
   function validate(){ $("#genBtn").disabled = !(state.rating && (state.goods.size || state.menus.size || state.concerns.size)); }
 
   // ---------- 文章生成 ----------
+  // 同じ口コミが並ばないよう、書き出し・言い回し・つなぎ・締め・語尾をそれぞれランダムに組み合わせる
   const pick = a => a[Math.floor(Math.random()*a.length)];
+  const chance = p => Math.random() < p;
   const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
-  const phraseOf = (list, labels) => list.filter(x=>labels.has(x.label)).map(x=>x.phrase);
+  const phrasesOf = (list, labels) => list.filter(x=>labels.has(x.label)).map(x=>pick(x.phrases || [x.phrase]));
+  const endPunct = s => /[。！!？?]$/.test(s) ? s : s + "。";
+  // 「周りの反応は？」への答えが「〜た」「〜い」で終わる普通体なら、丁寧語に寄せる（例：言われた→言われたんです）
+  const feelSentence = s => /(ました|でした|です|ます|[。！!？?])$/.test(s) ? endPunct(s) : /た$/.test(s) ? s + "んです。" : /い$/.test(s) ? s + "です。" : endPunct(s);
+  // 「いちばん良かったのは？」への答えが「〜こと」「〜さん」など名詞で終わる場合は文にする
+  const bestSentence = s => /[。！!？?]$|(です|ます|でした|ました|た|い|だ)$/.test(s) ? endPunct(s) : pick([`いちばん良かったのは、${s}です。`, `特に良かったのは${s}です。`, `何より${s}が良かったです。`]);
 
-  // 普通体の句（〜た / 〜い / 〜る）を丁寧体に
-  const RULES = [[/だった$/,"でした"],[/かった$/,"かったです"],[/た$/,"ました"],[/い$/,"いです"],[/る$/,"ます"]];
-  const polite = p => { const r = RULES.find(([re])=>re.test(p)); return r ? p.replace(r[0], r[1]) : p; };
-  function joinPair(ps){
-    const [a,b] = ps.map(polite);
-    if(!b) return a + "。";
-    return pick([`${a}し、${b}。`, `${a}。${b}。`]);
+  // 句（丁寧語）同士をつなぐ
+  const JOIN_PAIR = [
+    (a,b) => `${a}。${b}。`,
+    (a,b) => `${a}し、${b}。`,
+    (a,b) => `${a}。それに、${b}。`,
+    (a,b) => `${a}。${b}。`,
+  ];
+  const CONNECT = ["また、","それに、","ほかにも、","さらに、","あと、","", "", ""];
+
+  // 語尾の「。」をときどき「！」に（最大2回）
+  function spice(text){
+    let n = 0;
+    return text.replace(/(です|ました|でした|ます)。/g, (m, w) => (n < 2 && chance(.2)) ? (n++, w + "！") : m);
   }
 
-  // mode: full=しっかり / short=シンプル / impression=感想から / recommend=おすすめ
   function generate(mode){
     const r = state.rating;
-    const menus = [...state.menus];
-    const menuTxt = menus.length ? menus.map(m=>m.replace(/（.*?）/,"")).join("と") : "眉毛の施術";
-    let goods = shuffle(phraseOf(C.GOOD_POINTS, state.goods));
-    if(mode==="short") goods = goods.slice(0,2);
-    const concerns = phraseOf(C.CONCERNS, state.concerns);
-    const staff = $("#staff").value.trim();
-    const free = $("#free").value.trim();
-    const v = state.visit;
+    const B = C.brand, S = store.name, area = S.replace(/店$/,"");
+    const menus = [...state.menus].map(m=>m.replace(/（.*?）/,""));
+    const menuTxt = menus.length ? menus.join(pick(["と","と","、"])) : pick(["眉毛の施術","眉毛","眉のお手入れ"]);
+    let goods = shuffle(phrasesOf(C.GOOD_POINTS, state.goods));
+    if(mode==="short") goods = goods.slice(0, pick([1,2]));
+    const concerns = phrasesOf(C.CONCERNS, state.concerns);
+    const trig = C.TRIGGERS.find(t => t.label === state.trigger);
+    const staffRaw = $("#staff").value.trim();
+    const staff = staffRaw ? (/さん$/.test(staffRaw) ? staffRaw : staffRaw + "さん") : "";
+    const free1 = $("#free1").value.trim(), free2 = $("#free2").value.trim();
     const out = [];
 
-    // 導入
-    const intro = {
+    // --- 書き出し ---
+    const shop = pick([`${B}${S}`, `${B}の${S}`, `${B}さんの${S}`, `${area}の${B}さん`, `${B}さん（${S}）`]);
+    const did = pick([`${menuTxt}をお願いしました`, `${menuTxt}を受けました`, `${menuTxt}をしてもらいました`, `${menuTxt}をやってもらいました`]);
+    const INTRO = {
       "初めて": [
-        `初めて${store.name.replace("店","")}の${C.brand}さんに伺い、${menuTxt}をお願いしました。`,
-        `眉毛サロンは初めてでしたが、${C.brand}${store.name}で${menuTxt}を受けてきました。`,
-        `前から気になっていた${C.brand}${store.name}で、初めて${menuTxt}をしてもらいました。`,
+        `初めて${shop}に伺い、${did}。`,
+        `眉毛サロンは初めてでしたが、${shop}で${did}。`,
+        `前から気になっていた${shop}で、初めて${did}。`,
+        `今回初めて${shop}を利用しました。${did}。`,
+        `${shop}に初来店です。${did}。`,
+        `自分で眉を整えるのに限界を感じて、${shop}へ。${did}。`,
       ],
       "2回目": [
-        `前回が良かったので、2回目の来店です。今回は${menuTxt}をお願いしました。`,
-        `${C.brand}${store.name}に2回目の来店で、${menuTxt}をしてもらいました。`,
+        `前回が良かったので、${shop}に2回目の来店です。今回は${did}。`,
+        `${shop}は2回目です。${did}。`,
+        `2回目の利用で、${did}。お店は${shop}です。`,
+        `前回の仕上がりが気に入ったので、また${shop}へ。${did}。`,
       ],
       "3回目以上": [
-        `${C.brand}${store.name}にはいつもお世話になっています。今回も${menuTxt}をお願いしました。`,
-        `リピートで通っています。今回は${menuTxt}をしてもらいました。`,
+        `${shop}にはいつもお世話になっています。今回も${did}。`,
+        `リピートで通っている${shop}で、${did}。`,
+        `何度か通っている${shop}です。今回は${did}。`,
+        `定期的に${shop}に通っています。今回も${did}。`,
       ],
-    }[v] || [`${C.brand}${store.name}で${menuTxt}をしてもらいました。`];
-    const endPunct = s => /[。！!？?]$/.test(s) ? s : s + "。";
+    }[state.visit] || [`${shop}で${did}。`, `${shop}に行ってきました。${did}。`, `先日、${shop}で${did}。`];
+
     if(mode==="impression"){
-      out.push(pick(r>=4 ? ["眉を整えてもらって本当に良かったです！","想像以上の仕上がりで大満足です！","思い切って行ってみて正解でした。"]
-                    : ["率直な感想を書かせていただきます。"]));
-      if(free) out.push(endPunct(free));
+      out.push(pick(r>=4 ? ["眉を整えてもらって本当に良かったです！","想像以上の仕上がりで大満足です！","思い切って行ってみて正解でした。","行って良かったと心から思えるお店でした。","もっと早く行けばよかったです！"]
+                    : r===3 ? ["率直な感想を書かせていただきます。","良い点と気になった点を正直に書きます。"]
+                    : ["正直な感想を書かせていただきます。"]));
+      if(free1) out.push(bestSentence(free1));
     }
-    out.push(pick(intro));
+    if(trig && chance(mode==="short" ? .4 : .85)) out.push(pick(trig.phrases) + "。");
+    out.push(pick(INTRO));
 
-    // 良かった点
-    if(goods.length){
-      const chunks = [];
-      for(let i=0;i<goods.length;i+=2) chunks.push(goods.slice(i,i+2));
-      chunks.forEach((c,i)=>{
-        let s = joinPair(c);
-        if(i>0) s = pick(["また、","それに、","ほかにも、"]) + s;
-        out.push(s);
-      });
+    // --- 良かった点 ---
+    for(let i=0; i<goods.length; i+=2){
+      const a = goods[i], b = goods[i+1];
+      let s = b ? pick(JOIN_PAIR)(a,b) : a + "。";
+      if(i>0) s = pick(CONNECT) + s;
+      out.push(s);
     }
+    if(free1 && mode!=="impression") out.push(bestSentence(free1));
 
-    // 担当
-    if(staff && mode!=="short"){
-      const st = /さん$/.test(staff) ? staff : staff + "さん";
+    // --- 担当スタッフ ---
+    if(staff && (mode!=="short" || chance(.5))){
       out.push(pick([
-        `担当してくださった${st}、ありがとうございました。`,
-        `担当の${st}にはとてもお世話になりました。`,
+        `担当してくださった${staff}、ありがとうございました。`,
+        `担当の${staff}にはとてもお世話になりました。`,
+        `${staff}に担当していただきました。`,
+        `担当は${staff}でした。`,
+        `${staff}、ありがとうございました。`,
       ]));
     }
 
-    // ひとこと
-    if(free && mode!=="impression") out.push(endPunct(free));
+    // --- 気持ち・周りの反応 ---
+    if(free2) out.push(feelSentence(free2));
 
-    // 気になった点（★3以下）
+    // --- 気になった点 ---
     if(concerns.length){
-      out.push("一方で、" + concerns.join("ことや、") + "点は気になりました。");
+      out.push(pick(["一方で、","ただ、","強いて言えば、","正直に書くと、"]) + concerns.join("。また、") + "。");
     }
 
-    // 締め
-    const close = r>=5 ? [
-      "大満足です。また次もお願いしたいと思います！",
-      "本当に行って良かったです。眉で悩んでいる男性にぜひおすすめしたいです。",
-      "仕上がりにとても満足しています。定期的に通いたいと思います。",
-    ] : r===4 ? [
-      "全体的に満足しています。また利用したいと思います。",
-      "満足度は高いです。次回もお願いしようと思います。",
-    ] : r===3 ? [
-      "良いところもあったので、今後に期待しています。",
-      "全体としては普通でした。改善されればまた利用したいです。",
-    ] : [
-      "今回は正直あまり満足できませんでした。改善を期待しています。",
-      "今回は残念でしたが、今後の改善に期待しています。",
-    ];
-    const recommend = r>=4 ? [
-      "眉毛で印象を変えたい男性や、自分で整えるのが苦手な方にはぜひおすすめしたいです！",
-      "眉毛サロンが初めての男性でも安心して行けるお店だと思います。おすすめです！",
-    ] : close;
-    const shortClose = r>=4 ? ["また行きます！","おすすめです！","大満足でした！"] : close;
-    const impClose = r>=4 ? ["また次もお願いしたいと思います！","これからも定期的に通いたいと思います。"] : close;
-    out.push(pick(mode==="recommend" ? recommend : mode==="short" ? shortClose : mode==="impression" ? impClose : close));
-    return out.join("");
+    // --- 締め ---
+    const CLOSE = {
+      5: ["大満足です。また次もお願いしたいと思います！","本当に行って良かったです。","仕上がりにとても満足しています。定期的に通いたいと思います。","また眉が伸びてきたらお願いします！","次回もぜひお願いしたいです。","大満足の仕上がりでした。ありがとうございました！","これからも通わせていただきます。"],
+      4: ["全体的に満足しています。また利用したいと思います。","満足度は高いです。次回もお願いしようと思います。","また機会があれば利用したいです。","おおむね満足です。ありがとうございました。","また伸びてきたらお願いしようと思います。"],
+      3: ["良いところもあったので、今後に期待しています。","全体としては普通でした。改善されればまた利用したいです。","また様子を見て利用するか考えたいと思います。"],
+      2: ["今回は正直あまり満足できませんでした。改善を期待しています。","今回は残念でしたが、今後の改善に期待しています。"],
+      1: ["今回は残念な結果でした。改善を期待しています。","今回は満足できませんでした。"],
+    }[r];
+    const RECOMMEND = ["眉毛で印象を変えたい男性や、自分で整えるのが苦手な方にはぜひおすすめしたいです！","眉毛サロンが初めての男性でも安心して行けるお店だと思います。おすすめです！","眉毛に悩んでいる男性には自信を持っておすすめできます。","身だしなみを整えたい男性にぜひ行ってほしいお店です。","迷っている方は一度行ってみてほしいです！"];
+    const SHORT = ["また行きます！","おすすめです！","大満足でした！","また利用します。","ありがとうございました！","リピート確定です。"];
+    const IMP = ["また次もお願いしたいと思います！","これからも定期的に通いたいと思います。","また伸びてきたら行きます。","次回も楽しみにしています。"];
+    const pool = r>=4 ? (mode==="recommend" ? RECOMMEND : mode==="short" ? SHORT : mode==="impression" ? IMP : CLOSE) : CLOSE;
+    out.push(pick(pool));
+    return spice(out.join(""));
   }
 
   const MODES = [
@@ -342,16 +374,23 @@
     { id:"impression", label:"感想から" },
     { id:"recommend", label:"おすすめ" },
   ];
+  const HIST_KEY = "winsome_review_hist";
+  function loadHist(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)) || []; }catch(e){ return []; } }
+  function saveHist(a){ try{ localStorage.setItem(HIST_KEY, JSON.stringify(a)); }catch(e){} }
+
   // 候補ごとの文章（タブ切替しても各タブの編集内容は保持）
   let texts = [], current = 0;
   function renderCandidates(){
     const box = $("#tabs"); box.innerHTML = "";
-    const seen = new Set();
+    // この端末で過去に作った文章とも重ならないようにする
+    const hist = loadHist();
+    const seen = new Set(hist);
     texts = MODES.map(m => {
       let t, tries = 0;
-      do { t = generate(m.id); } while(seen.has(t) && ++tries < 20);
+      do { t = generate(m.id); } while(seen.has(t) && ++tries < 30);
       seen.add(t); return t;
     });
+    saveHist(hist.concat(texts).slice(-200));
     MODES.forEach((m,i) => {
       const b = document.createElement("button");
       b.type = "button"; b.className = "tab"; b.setAttribute("role","tab");
