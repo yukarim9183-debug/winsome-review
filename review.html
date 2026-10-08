@@ -290,7 +290,9 @@
     const out = [];
 
     // --- 書き出し ---
-    const shop = pick([`${B}${S}`, `${B}の${S}`, `${B}さんの${S}`, `${area}の${B}さん`, `${B}さん（${S}）`]);
+    const kw = store.keywords;
+    const shop = (kw && kw.shopNames && chance(.6)) ? pick(kw.shopNames)
+      : pick([`${B}${S}`, `${B}の${S}`, `${B}さんの${S}`, `${area}の${B}さん`, `${B}さん（${S}）`]);
     const did = pick([`${menuTxt}をお願いしました`, `${menuTxt}を受けました`, `${menuTxt}をしてもらいました`, `${menuTxt}をやってもらいました`]);
     const INTRO = {
       "初めて": [
@@ -364,6 +366,16 @@
     const SHORT = ["また行きます！","おすすめです！","大満足でした！","また利用します。","ありがとうございました！","リピート確定です。"];
     const IMP = ["また次もお願いしたいと思います！","これからも定期的に通いたいと思います。","また伸びてきたら行きます。","次回も楽しみにしています。"];
     const pool = r>=4 ? (mode==="recommend" ? RECOMMEND : mode==="short" ? SHORT : mode==="impression" ? IMP : CLOSE) : CLOSE;
+    // --- キーワード（店舗設定 keywords）：足りなければ締めの前に自然な一文を足す ---
+    if(kw){
+      const count = () => out.join("").split(kw.word).length - 1;
+      const extra = shuffle((r>=4 ? kw.sentences : kw.neutralSentences) || []);
+      // 同じ趣旨の文が重ならないように（例：「探している方に」が2回、「初めて」と「勇気がいった」が両方）
+      const THEMES = ["探している","勇気","初めて","おすすめ"];
+      const clash = s => THEMES.some(t => s.includes(t) && out.join("").includes(t));
+      while(count() < kw.min && extra.length){ const s = extra.pop(); if(!clash(s)) out.push(s); }
+      if(count() < kw.min) out.push(pick((r>=4 ? kw.sentences : kw.neutralSentences) || [""]));
+    }
     out.push(pick(pool));
     return spice(out.join(""));
   }
